@@ -1,0 +1,78 @@
+name: OpenCode free pilot
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [tasks/002-breakout.md]
+permissions:
+  contents: write
+concurrency:
+  group: opencode-pilot
+  cancel-in-progress: false
+jobs:
+  implement:
+    if: github.repository_owner == 'edutourinho'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned tools
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+          npm install --prefix /tmp/opencode-cli opencode-ai@1.19.6
+      - name: Run single free agent without GitHub credentials
+        id: agent
+        continue-on-error: true
+        env:
+          CI: 'true'
+        run: |
+          set -o pipefail
+          /tmp/opencode-cli/node_modules/.bin/opencode --version | tee /tmp/opencode-version.txt
+          /tmp/opencode-cli/node_modules/.bin/opencode models opencode | tee /tmp/opencode-models.txt
+          grep -Fx 'opencode/big-pickle' /tmp/opencode-models.txt
+          timeout 1100 /tmp/opencode-cli/node_modules/.bin/opencode run --pure --auto --format json --model opencode/big-pickle --title 'Breakout issue 2 free pilot' "$(cat tasks/002-breakout.md)" > /tmp/opencode-events.jsonl 2>&1
+      - name: Validate changed paths
+        run: |
+          python3 - <<'PY'
+          import subprocess
+          paths = subprocess.check_output(['git','ls-files','-m','-o','--exclude-standard','-z']).decode().split('\0')
+          bad = [p for p in paths if p and not (p == 'index.html' or p.startswith(('src/','tests/','e2e/')))]
+          if bad: raise SystemExit('Agent modified prohibited paths: ' + repr(bad))
+          PY
+      - name: Test generated code
+        id: tests
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee /tmp/unit-tests.txt
+          npm run test:e2e 2>&1 | tee /tmp/browser-tests.txt
+      - name: Publish evidence branch only
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AGENT_OUTCOME: ${{ steps.agent.outcome }}
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+        run: |
+          mkdir -p docs/runs
+          cp /tmp/opencode-events.jsonl docs/runs/events-${{ github.run_id }}.jsonl
+          cp /tmp/opencode-version.txt docs/runs/version-${{ github.run_id }}.txt
+          cp /tmp/opencode-models.txt docs/runs/models-${{ github.run_id }}.txt
+          cp /tmp/unit-tests.txt docs/runs/unit-${{ github.run_id }}.txt || true
+          cp /tmp/browser-tests.txt docs/runs/browser-${{ github.run_id }}.txt || true
+          printf 'Run: %s\nModel: opencode/big-pickle\nAgent: %s\nTests: %s\nNo paid API key supplied. No merge performed.\n' 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}' "$AGENT_OUTCOME" "$TEST_OUTCOME" > docs/runs/result-${{ github.run_id }}.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c opencode/issue-2-${{ github.run_id }}
+          git add index.html src tests e2e docs/runs
+          git commit -m 'feat: OpenCode free pilot for issue 2 with execution evidence'
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $AUTH" push origin HEAD
+          cat docs/runs/result-${{ github.run_id }}.txt >> "$GITHUB_STEP_SUMMARY"
+      - name: Fail if generation or tests failed
+        if: steps.agent.outcome != 'success' || steps.tests.outcome != 'success'
+        run: exit 1
