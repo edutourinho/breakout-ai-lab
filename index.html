@@ -1,1 +1,67 @@
-<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Breakout AI Lab</title><body><main><h1>Breakout AI Lab</h1><p>Laboratório em implantação. A versão jogável aguarda implementação pelo OpenCode e validação do pull request.</p></main></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#050914">
+  <title>Breakout AI Lab</title>
+  <link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <p class="eyebrow">Laboratório de jogos</p>
+        <h1>Breakout</h1>
+      </div>
+      <div class="hud" aria-label="Placar da partida">
+        <div class="hud-item">
+          <span>Pontos</span>
+          <strong id="score">0</strong>
+        </div>
+        <div class="hud-item">
+          <span>Vidas</span>
+          <strong id="lives">3</strong>
+        </div>
+      </div>
+    </header>
+
+    <div class="status" aria-live="polite">
+      <strong id="status">Pronto</strong>
+      <span id="hint">Use ←/→ ou A/D para mover. Espaço inicia a partida.</span>
+    </div>
+
+    <div class="actions" role="group" aria-label="Ações da partida">
+      <button id="launch" type="button" disabled>Lançar bola</button>
+      <button id="pause" type="button" disabled>Pausar</button>
+      <button id="resume" type="button" disabled>Retomar</button>
+      <button id="restart" type="button">Reiniciar</button>
+    </div>
+
+    <div class="stage" id="stage">
+      <canvas id="game" width="360" height="520" tabindex="0" role="img" aria-label="Campo de jogo Breakout com raquete, bola e tijolos coloridos">Seu navegador não suporta canvas.</canvas>
+      <div class="overlay" id="overlay">
+        <div class="panel">
+          <p class="kicker" id="overlay-kicker">Pronto para jogar?</p>
+          <h2 id="overlay-title">Breakout</h2>
+          <p id="overlay-text">Mova a raquete com ←/→ ou A/D. Use Espaço para lançar a bola e pausar.</p>
+          <button id="overlay-action" type="button">Começar jogo</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="touch-controls" role="group" aria-label="Controles de toque">
+      <button id="touch-left" type="button" aria-label="Mover raquete para a esquerda">
+        <span aria-hidden="true">←</span><span>Esquerda</span>
+      </button>
+      <button id="touch-right" type="button" aria-label="Mover raquete para a direita">
+        <span>Direita</span><span aria-hidden="true">→</span>
+      </button>
+    </div>
+
+    <p class="help">Toque e segure nas setas para mover a raquete em telas sensíveis ao toque.</p>
+  </main>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
+

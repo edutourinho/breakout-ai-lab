@@ -1,33 +1,45 @@
 # Breakout AI Lab
 
-Laboratório público para testar desenvolvimento coordenado pelo ChatGPT, com um único executor OpenCode usando modelo gratuito, Actions para testes e Codex para apoio/revisão.
+Jogo Breakout em HTML, CSS e JavaScript, desenvolvido como laboratório de agentes de IA.
 
-## Estado
+**Jogar:** https://edutourinho.github.io/breakout-ai-lab/
 
-Infraestrutura inicial. A versão jogável será implementada na Issue #2 e revisada em pull request antes de merge. O index inicial é apenas uma página de implantação.
+## Controles
 
-## Executar
+- Setas ou A/D movem a plataforma; Espaço inicia, lança a bola ou alterna pausa.
+- Em telas de toque: Começar jogo, Lançar bola e botões Esquerda/Direita.
+- Botões de pausa, retomada e reinício; três vidas, pontos e telas de vitória/derrota.
 
-Node 22: `npm ci`, `npx playwright install chromium`, `npm test`, `npm run test:e2e`, `npm start` (porta 4173).
+## Executar e testar
 
-O mesmo executor pode rodar localmente: instalar `opencode-ai@1.19.6` e executar `opencode run --pure --model opencode/big-pickle "$(cat tasks/002-breakout.md)"` em checkout isolado. Nunca adicionar chaves de APIs pagas.
+Node 22: `npm ci`, `npx playwright install chromium`, `npm start` (porta 4173). Testes: `npm test` e `npm run test:e2e`.
 
-## Fluxo
+Lógica determinística em src/game.js; renderização e entrada separadas. Sem dependências de execução, assets remotos ou chamadas de rede no jogo. Uma fase, sem áudio ou recordes persistidos.
 
-Issue → tarefa delimitada → OpenCode gratuito → branch com evidências → testes → PR criado pelo coordenador → revisão → validação humana → merge e Pages manuais. Nenhum merge automático.
+## Fluxo de desenvolvimento
 
-O bootstrap de infraestrutura é um commit inicial direto em main para habilitar o Actions; implementações do jogo ficam em branches. O workflow do piloto roda uma vez quando o arquivo da tarefa entra em main, e pode ser disparado manualmente depois. Usa CLI diretamente: não exige instalar o app OpenCode nem fornecer chave de API/GitHub ao modelo. O passo posterior publica a branch usando GITHUB_TOKEN; o coordenador abre o PR. Isso evita depender da opção administrativa de permitir criação de PRs por Actions. CI de PR é disparado pela integração ao abrir o PR.
+ChatGPT coordena requisitos e Issues. Um OpenCode gratuito implementa em runner público do Actions. Um passo separado publica a branch e evidências; o coordenador abre o PR, revisa e valida o SHA final. CI executa testes de lógica e Chromium desktop/mobile. Merge e deploy são operações manuais do coordenador, após validação; auto-merge desabilitado.
 
-## Custos e limites verificados em 19/11/2026
+O bootstrap inicial de infraestrutura foi criado diretamente em main para habilitar Actions. O jogo entrou pelo PR #8, com revisão e correções. Evidências e limites da validação: [docs/VALIDACAO.md](docs/VALIDACAO.md). Logs brutos: docs/runs/.
 
-- Runners padrão de Actions são gratuitos em repositórios públicos; não usar runners maiores. Logs e job summaries não consomem quota de artifacts. Pages usa artifact de curta retenção (1 dia).
-- Big Pickle consta como gratuito por tempo limitado na documentação oficial. Não há promessa de cota permanente ou disponibilidade. Configuração fixa modelo principal e pequeno no mesmo modelo gratuito; sem chaves pagas, sem fallback pago. Se exigir login, limitar ou encerrar oferta, registrar bloqueio e parar.
-- O catálogo da CLI pode conter modelos já descontinuados: GLM-5.3-Flash Free foi descontinuado em 18/11/2026 e não será usado.
-- Timeout do job: 25 min; inferência: 1100 s; um agente por vez; sem agendamento recorrente.
-- Só código público deste jogo é enviado. Os termos dos modelos gratuitos variam e podem prever uso dos dados para melhoria.
+## Resultado do primeiro agente
 
-Fontes oficiais: https://opencode.ai/docs/console/models/ ; https://opencode.ai/docs/github/ ; https://docs.github.com/en/billing/concepts/product-billing/github-actions
+Execução: https://github.com/edutourinho/breakout-ai-lab/actions/runs/44542811277
 
-## Validação
+OpenCode 1.19.6 + opencode/big-pickle; 25 etapas em 1059,994 segundos entre primeiro/último evento; custo relatado zero. O agente escreveu jogo e testes (14 unitários e 7 de navegador aprovados). A revisão corrigiu lançamento sem teclado e limpeza de comandos ao pausar; acrescentou regressão (9 testes de navegador aprovados, um skip de toque no desktop). A disponibilidade gratuita local não foi comprovada: houve Free usage limit reached. O sucesso no runner não garante disponibilidade permanente.
 
-Testes iniciais verificam somente a estrutura e o carregamento. Não comprovam jogabilidade. O agente deve adicionar testes reais de física e fluxo; o coordenador revisa os resultados e a interface. Publicação Pages é manual e somente da main após testes.
+## Infraestrutura e custos — verificados em 19/11/2026
+
+- Repositório público e runner padrão Ubuntu 24.04: compute Actions gratuito. Não usar runners maiores.
+- OpenCode principal e pequeno fixados em modelo gratuito, sem chaves pagas e sem fallback pago. Big Pickle é oferta por tempo limitado. Nunca acrescentar saldo, assinatura ou provedor pago sem autorização do usuário.
+- Sem segredos do GitHub no processo do modelo. Somente código público deste jogo pode ser enviado ao provedor.
+- CI em push da main e em PR. Pages é workflow_dispatch e repete os testes antes do deploy. Artifact Pages com retenção de um dia; pesos de modelos não são armazenados em artifacts/cache.
+- Timeout do piloto hospedado: 25 min (inferência 1100s). Um executor por vez; não há agenda recorrente.
+- Experimento alternativo OpenCode + Ollama local por CPU, Qwen3:4b, no PR #7/Issue #6; ainda separado da V1. Serve para medir viabilidade de inferência local, não para acoplar IA ao jogo.
+- GitHub Models foi encerrado em 30/07/2026 e não é fallback disponível. Modelos listados pela CLI podem estar descontinuados; GLM-5.3-Flash Free não deve ser usado.
+
+Fontes oficiais: https://opencode.ai/docs/console/models/ ; https://docs.github.com/en/billing/concepts/product-billing/github-actions ; https://docs.github.com/en/github-models ; https://docs.ollama.com/integrations/opencode
+
+## Execução local do mesmo agente
+
+Em checkout isolado, instalar opencode-ai@1.19.6 e executar a tarefa delimitada com `opencode run --pure --model opencode/big-pickle "$(cat tasks/002-breakout.md)"`. Interromper caso o serviço exija pagamento ou informe cota indisponível; não supor que o modelo listado está acessível. A configuração CPU experimental fica na branch lab/cpu-pilot. Computador local não precisa de Android Studio ou ferramentas de outro projeto.

@@ -1,0 +1,98 @@
+
+> breakout-ai-lab@0.1.0 test
+> node --test tests/*.test.js
+
+TAP version 13
+# Subtest: estado inicial contém três vidas, raquete central e todos os tijolos
+ok 1 - estado inicial contém três vidas, raquete central e todos os tijolos
+  ---
+  duration_ms: 1.492416
+  type: 'test'
+  ...
+# Subtest: iniciar e lançar a bola preparada na raquete
+ok 2 - iniciar e lançar a bola preparada na raquete
+  ---
+  duration_ms: 0.242008
+  type: 'test'
+  ...
+# Subtest: paredes laterais e superior refletem a bola sem custar vidas
+ok 3 - paredes laterais e superior refletem a bola sem custar vidas
+  ---
+  duration_ms: 0.447661
+  type: 'test'
+  ...
+# Subtest: subpassos impedem que a bola atravesse a parede em quadros longos
+ok 4 - subpassos impedem que a bola atravesse a parede em quadros longos
+  ---
+  duration_ms: 0.486153
+  type: 'test'
+  ...
+# Subtest: a raquete devolve a bola para cima sem alterar pontos ou vidas
+ok 5 - a raquete devolve a bola para cima sem alterar pontos ou vidas
+  ---
+  duration_ms: 0.424182
+  type: 'test'
+  ...
+# Subtest: tijolo é destruído, pontua e reflete a bola
+ok 6 - tijolo é destruído, pontua e reflete a bola
+  ---
+  duration_ms: 1.247425
+  type: 'test'
+  ...
+# Subtest: a pontuação acumula a cada tijolo destruído
+ok 7 - a pontuação acumula a cada tijolo destruído
+  ---
+  duration_ms: 0.243904
+  type: 'test'
+  ...
+# Subtest: bola perdida custa uma vida e volta presa à raquete
+ok 8 - bola perdida custa uma vida e volta presa à raquete
+  ---
+  duration_ms: 0.150523
+  type: 'test'
+  ...
+# Subtest: destruir o último tijolo gera vitória
+ok 9 - destruir o último tijolo gera vitória
+  ---
+  duration_ms: 0.296501
+  type: 'test'
+  ...
+# Subtest: perder a última vida gera fim de jogo
+ok 10 - perder a última vida gera fim de jogo
+  ---
+  duration_ms: 0.262875
+  type: 'test'
+  ...
+# Subtest: pausa congela física e retomada restaura o movimento
+ok 11 - pausa congela física e retomada restaura o movimento
+  ---
+  duration_ms: 0.616282
+  type: 'test'
+  ...
+# Subtest: reinício restaura placar, vidas, tijolos, raquete e entradas
+ok 12 - reinício restaura placar, vidas, tijolos, raquete e entradas
+  ---
+  duration_ms: 0.131167
+  type: 'test'
+  ...
+# Subtest: limpar entradas remove ambos os sentidos pressionados
+ok 13 - limpar entradas remove ambos os sentidos pressionados
+  ---
+  duration_ms: 0.053751
+  type: 'test'
+  ...
+# Subtest: HTML declares Portuguese and responsive viewport
+ok 14 - HTML declares Portuguese and responsive viewport
+  ---
+  duration_ms: 3.211029
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 51.641825
