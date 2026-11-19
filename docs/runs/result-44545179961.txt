@@ -1,0 +1,6 @@
+Run: https://github.com/edutourinho/breakout-ai-lab/actions/runs/44545179961
+Executor: OpenCode 1.19.6 + local Ollama 0.40.16 Qwen3:4b
+Preflight: success
+Agent: failure
+Tests: success
+No paid inference API. No merge.

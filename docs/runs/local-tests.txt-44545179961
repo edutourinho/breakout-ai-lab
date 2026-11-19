@@ -1,0 +1,20 @@
+
+> breakout-ai-lab@0.1.0 test
+> node --test tests/*.test.js
+
+TAP version 13
+# Subtest: HTML declares Portuguese and responsive viewport
+ok 1 - HTML declares Portuguese and responsive viewport
+  ---
+  duration_ms: 5.438966
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 73.245314

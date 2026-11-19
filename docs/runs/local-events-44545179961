@@ -1,0 +1,26 @@
+timestamp=2026-11-19T14:41:51.790Z level=INFO run=462224d7 message="creating instance" directory=/home/runner/work/breakout-ai-lab/breakout-ai-lab
+timestamp=2026-11-19T14:41:51.791Z level=INFO run=462224d7 message=fromDirectory directory=/home/runner/work/breakout-ai-lab/breakout-ai-lab
+timestamp=2026-11-19T14:41:51.816Z level=INFO run=462224d7 message=bootstrapping directory=/home/runner/work/breakout-ai-lab/breakout-ai-lab
+timestamp=2026-11-19T14:41:51.820Z level=INFO run=462224d7 message=loading path=/home/runner/.config/opencode/config.json
+timestamp=2026-11-19T14:41:51.821Z level=INFO run=462224d7 message=loading path=/home/runner/.config/opencode/opencode.json
+timestamp=2026-11-19T14:41:51.821Z level=INFO run=462224d7 message=loading path=/home/runner/.config/opencode/opencode.jsonc
+timestamp=2026-11-19T14:41:51.824Z level=INFO run=462224d7 message=loading path=/home/runner/work/breakout-ai-lab/breakout-ai-lab/opencode.json
+timestamp=2026-11-19T14:41:52.004Z level=INFO run=462224d7 message="all LSPs are disabled"
+timestamp=2026-11-19T14:41:52.004Z level=INFO run=462224d7 message="all formatters are disabled"
+timestamp=2026-11-19T14:41:52.004Z level=INFO run=462224d7 message=init
+timestamp=2026-11-19T14:41:52.139Z level=INFO run=462224d7 message=created id=ses_e0bbe3ff4ffeQdrdq1WpSx3ihK slug=tidy-cactus version=1.19.6 projectID=36dc6ca37b95f79e175b8ab78d20035a8a2468ce directory=/home/runner/work/breakout-ai-lab/breakout-ai-lab path="" workspaceID=undefined parentID=undefined title="CPU paddle pilot" agent=undefined model=undefined metadata=undefined permission="[{\"permission\":\"question\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_enter\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_exit\",\"pattern\":\"*\",\"action\":\"deny\"}]" cost=0 tokens.input=0 tokens.output=0 tokens.reasoning=0 tokens.cache.read=0 tokens.cache.write=0 time.created=1795099312139 time.updated=1795099312139
+timestamp=2026-11-19T14:41:52.150Z level=INFO run=462224d7 message="event connected"
+timestamp=2026-11-19T14:41:52.200Z level=INFO run=462224d7 message=loop session.id=ses_e0bbe3ff4ffeQdrdq1WpSx3ihK step=0
+timestamp=2026-11-19T14:41:52.660Z level=INFO run=462224d7 message=initialized
+timestamp=2026-11-19T14:41:52.673Z level=INFO run=462224d7 message=tracking hash=10c75b1b8fdb4b98ea051981d0eea2a8aefd2c3c cwd=/home/runner/work/breakout-ai-lab/breakout-ai-lab git=/home/runner/.local/share/opencode/snapshot/36dc6ca37b95f79e175b8ab78d20035a8a2468ce/fc22c73b7d8804d75cbb3c5a5e03a4f6d316dd2e
+timestamp=2026-11-19T14:41:52.678Z level=INFO run=462224d7 message="shell tool using shell" shell=/bin/bash
+timestamp=2026-11-19T14:41:52.683Z level=INFO run=462224d7 message=init count=1
+timestamp=2026-11-19T14:41:52.749Z level=INFO run=462224d7 message="watcher backend" directory=/home/runner/work/breakout-ai-lab/breakout-ai-lab platform=linux backend=inotify
+timestamp=2026-11-19T14:41:52.755Z level=INFO run=462224d7 message="project copy refresh started" projectID=36dc6ca37b95f79e175b8ab78d20035a8a2468ce
+timestamp=2026-11-19T14:41:53.033Z level=INFO run=462224d7 message="project copy refresh done" projectID=36dc6ca37b95f79e175b8ab78d20035a8a2468ce updated=[] removed=[]
+timestamp=2026-11-19T14:41:53.040Z level=INFO run=462224d7 message="booting location services" directory=/home/runner/work/breakout-ai-lab/breakout-ai-lab workspaceID=undefined
+timestamp=2026-11-19T14:41:53.044Z level=INFO run=462224d7 message=process session.id=ses_e0bbe3ff4ffeQdrdq1WpSx3ihK messageID=msg_1f441c1f6001R7Eb4803IdU1aR
+timestamp=2026-11-19T14:41:53.045Z level=INFO run=462224d7 message=stream providerID=ollama modelID=qwen3:4b session.id=ses_e0bbe3ff4ffeQdrdq1WpSx3ihK small=false agent=build mode=primary
+timestamp=2026-11-19T14:41:53.051Z level=INFO run=462224d7 message="llm runtime selected" llm.runtime=ai-sdk llm.provider=ollama llm.model=qwen3:4b
+timestamp=2026-11-19T14:42:52.100Z level=INFO run=462224d7 message=cleanup prune=7.days
+{"type":"step_start","timestamp":1795099474985,"sessionID":"ses_e0bbe3ff4ffeQdrdq1WpSx3ihK","part":{"id":"prt_1f4443c0e001PETRjmdQ3SqnTV","messageID":"msg_1f441c1f6001R7Eb4803IdU1aR","sessionID":"ses_e0bbe3ff4ffeQdrdq1WpSx3ihK","snapshot":"10c75b1b8fdb4b98ea051981d0eea2a8aefd2c3c","type":"step-start"}}
