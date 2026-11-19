@@ -14,7 +14,7 @@ async function paddleCenter(page) {
       const red = data[index];
       const green = data[index + 1];
       const blue = data[index + 2];
-      if (blue > 190 && green > 140 && red < 190) {
+      if (blue > 190 && green > 140 && blue - red > 40 && green - red > 20) {
         const x = (index / 4) % canvas.width;
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
@@ -151,5 +151,20 @@ test('perda de foco pausa a partida e libera os controles', async ({ page }) => 
   const resumedPosition = await paddleCenter(page);
   await page.waitForTimeout(250);
   expect(Math.abs((await paddleCenter(page)) - resumedPosition)).toBeLessThan(0.01);
+});
+
+test('pausa libera uma seta mantida pressionada antes de retomar', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Começar jogo', exact: true }).click();
+  await page.keyboard.press('Space');
+  await page.keyboard.down('ArrowLeft');
+  await page.waitForTimeout(80);
+  await page.keyboard.press('Space');
+  await expect(page.locator('#status')).toHaveText('Pausado');
+  await page.getByRole('button', { name: 'Retomar jogo', exact: true }).click();
+  const position = await paddleCenter(page);
+  await page.waitForTimeout(200);
+  expect(Math.abs((await paddleCenter(page)) - position)).toBeLessThan(0.01);
+  await page.keyboard.up('ArrowLeft');
 });
 
