@@ -54,7 +54,7 @@ test('teclado inicia, move, lança, pausa, retoma e reinicia a partida', async (
 
   await expect(page.locator('#status')).toHaveText('Em jogo');
   await expect(page.locator('#overlay')).toBeHidden();
-  await expect(page.locator('#hint')).toHaveText('Pressione Espaço para lançar a bola.');
+  await expect(page.locator('#launch')).toBeEnabled();
 
   const centered = await paddleCenter(page);
   expect(centered).not.toBeNull();
@@ -94,7 +94,7 @@ test('teclado inicia, move, lança, pausa, retoma e reinicia a partida', async (
   await expect(page.locator('#status')).toHaveText('Em jogo');
   await expect(page.locator('#score')).toHaveText('0');
   await expect(page.locator('#lives')).toHaveText('3');
-  await expect(page.locator('#hint')).toHaveText('Pressione Espaço para lançar a bola.');
+  await expect(page.locator('#launch')).toBeEnabled();
   await page.waitForTimeout(250);
   expect(Math.abs((await paddleCenter(page)) - 0.5)).toBeLessThan(0.03);
 
@@ -119,6 +119,16 @@ test('controles de toque movem a raquete em telas sensíveis', async ({ page, ha
   const afterRight = await paddleCenter(page);
   expect(afterRight).toBeGreaterThan(afterLeft + 0.05);
 
+  await page.getByRole('button', { name: 'Lançar bola', exact: true }).tap();
+  await expect(page.locator('#launch')).toBeDisabled();
+  await expect(page.locator('#hint')).toHaveText('Espaço pausa o jogo.');
+  await page.getByRole('button', { name: 'Pausar', exact: true }).tap();
+  await expect(page.locator('#status')).toHaveText('Pausado');
+  await page.getByRole('button', { name: 'Retomar jogo', exact: true }).tap();
+  await expect(page.locator('#status')).toHaveText('Em jogo');
+  await page.getByRole('button', { name: 'Reiniciar', exact: true }).tap();
+  await expect(page.locator('#launch')).toBeEnabled();
+
   expect(errors).toEqual([]);
 });
 
@@ -142,3 +152,4 @@ test('perda de foco pausa a partida e libera os controles', async ({ page }) => 
   await page.waitForTimeout(250);
   expect(Math.abs((await paddleCenter(page)) - resumedPosition)).toBeLessThan(0.01);
 });
+

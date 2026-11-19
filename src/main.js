@@ -21,6 +21,7 @@ const livesEl = document.querySelector('#lives');
 const statusEl = document.querySelector('#status');
 const hintEl = document.querySelector('#hint');
 const pauseBtn = document.querySelector('#pause');
+const launchBtn = document.querySelector('#launch');
 const resumeBtn = document.querySelector('#resume');
 const restartBtn = document.querySelector('#restart');
 const overlay = document.querySelector('#overlay');
@@ -117,6 +118,7 @@ function syncUI() {
   livesEl.textContent = String(state.lives);
   statusEl.textContent = statusLabels[state.status];
   pauseBtn.disabled = state.status !== 'playing';
+  launchBtn.disabled = state.status !== 'playing' || !state.ball.stuck;
   resumeBtn.disabled = state.status !== 'paused';
 
   if (state.status === 'ready') {
@@ -126,7 +128,7 @@ function syncUI() {
   } else if (state.status === 'won' || state.status === 'gameover') {
     hintEl.textContent = 'Use “Jogar novamente” para recomeçar.';
   } else if (state.ball.stuck) {
-    hintEl.textContent = 'Pressione Espaço para lançar a bola.';
+    hintEl.textContent = 'Pressione Espaço ou toque em “Lançar bola”.';
   } else {
     hintEl.textContent = 'Espaço pausa o jogo.';
   }
@@ -143,7 +145,10 @@ function performAction() {
   if (state.status === 'ready') {
     startGame(state);
   } else if (state.status === 'playing') {
-    if (!launchBall(state)) pauseGame(state);
+    if (!launchBall(state)) {
+      releaseAllInput();
+      pauseGame(state);
+    }
   } else if (state.status === 'paused') {
     resumeGame(state);
   } else {
@@ -239,7 +244,11 @@ if ('ResizeObserver' in window) {
 }
 
 overlayAction.addEventListener('click', performAction);
+launchBtn.addEventListener('click', () => {
+  if (launchBall(state)) syncUI();
+});
 pauseBtn.addEventListener('click', () => {
+  releaseAllInput();
   if (pauseGame(state)) syncUI();
 });
 resumeBtn.addEventListener('click', () => {
@@ -257,3 +266,4 @@ bindHoldButton(document.querySelector('#touch-right'), 'right');
 resizeCanvas();
 syncUI();
 requestAnimationFrame(frame);
+
