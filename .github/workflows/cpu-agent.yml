@@ -45,7 +45,7 @@ jobs:
         continue-on-error: true
         run: |
           curl -fsS --max-time 180 http://127.0.0.1:11434/api/chat -H 'Content-Type: application/json' -d '{"model":"qwen3:4b","stream":false,"think":false,"messages":[{"role":"user","content":"Reply OK only."}],"options":{"num_predict":16,"num_ctx":65536}}' | tee /tmp/local-preflight.json
-          python3 -c 'import json; x=json.load(open("/tmp/local-preflight.json")); assert x.get("message",{}).get("content","").strip(), x'
+          python3 -c 'import json; x=json.load(open("/tmp/local-preflight.json")); assert x.get("message",{}).get("content","").strip() == "OK", x'
       - name: Implement tiny task with OpenCode
         id: agent
         if: steps.preflight.outcome == 'success'
@@ -67,7 +67,8 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          test -f src/paddle.js && test -f tests/paddle.test.js
+          test -f src/paddle.js
+          test -f tests/paddle.test.js
           npm test 2>&1 | tee /tmp/local-tests.txt
       - name: Publish evidence branch
         env:
