@@ -51,7 +51,9 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import json
+          import json, subprocess
+          changes = subprocess.check_output(['git','ls-files','-m','-o','--exclude-standard','-z']).decode().split('\0')
+          if not any(p == 'index.html' or p.startswith(('src/','tests/','e2e/')) for p in changes if p): raise SystemExit('Agent produced no implementation changes')
           if not list(Path("src").rglob("*.js")): raise SystemExit("No game JavaScript was generated")
           if not [p for p in Path("tests").glob("*.test.js") if p.name != "scaffold.test.js"]: raise SystemExit("No game unit tests were generated")
           if not [p for p in Path("e2e").glob("*.spec.js") if p.name != "scaffold.spec.js"]: raise SystemExit("No gameplay browser tests were generated")

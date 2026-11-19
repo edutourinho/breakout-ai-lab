@@ -1,31 +1,29 @@
-# Evidências do piloto — 19/11/2026
+# Resultado do piloto — 19/11/2026
 
-## Implantado
+## V1 concluída
 
-- Repositório público independente, quatro Issues e tarefa de implementação delimitada.
-- OpenCode CLI 1.19.6, modelo principal e pequeno opencode/big-pickle, sharing desativado, nenhum segredo de API pago.
-- CI com node:test e Playwright em desktop/celular. Bootstrap aprovado: https://github.com/edutourinho/breakout-ai-lab/actions/runs/44542811297
-- Pages configurado com fonte GitHub Actions. Deploy ainda não disparado porque não há jogo validado em main.
-- Primeiro run falhou antes da inferência: Playwright 1.56.1 não suporta Ubuntu 26.04, atualmente selecionado por ubuntu-latest. Corrigido para ubuntu-24.04.
+Jogo: https://edutourinho.github.io/breakout-ai-lab/
 
-## Executor gratuito
+PR #8 integrado manualmente após revisão, correções e CI verde no SHA a336bb3f03cc9be3accdc86bddadc1dfd0059f2b. Deploy aprovado: https://github.com/edutourinho/breakout-ai-lab/actions/runs/44548377780 . Versão pública conferida no navegador: início, lançamento sem teclado, pausa e reinício. Captura: docs/evidence/breakout-live.jpg. Relatório completo da V1 está na main em docs/VALIDACAO.md.
 
-A CLI lista Big Pickle, mas listagem não prova disponibilidade de inferência. Uma consulta mínima local recebeu em 19/11/2026 às 14:30:05 UTC:
+## Executor principal
 
-```
-AI_APICallError: Free usage limit reached. Free models work in OpenCode (https://opencode.ai); subscribe to OpenCode Go to keep going: https://opencode.ai/go
-```
+OpenCode 1.19.6 com opencode/big-pickle gerou o jogo na execução 44542811277, sem chave paga. Foram 89 eventos, 25 etapas, 1059,994s entre primeiro e último evento, sem eventos de erro, custo relatado zero. O agente aprovou seus 14 testes unitários e 7 de navegador. A revisão encontrou impossibilidade de lançar a bola somente por toque e retenção de comandos na pausa. O coordenador corrigiu e ampliou a suíte: 14 unitários e 9 de navegador aprovados, 1 skip de toque no desktop.
 
-Nenhum plano foi contratado, chave paga fornecida, identidade/IP trocado ou fallback pago habilitado. A primeira consulta encerrou em timeout de 45s; o diagnóstico com logs identificou o limite. Não é possível inferir desses testes a cota exata, quando será renovada, ou se o limite é por conta, rede ou modelo. Não há garantia de que cadastrar uma conta gratuita resolva.
+Consulta local mínima retornou Free usage limit reached. Esse limite não se reproduziu no runner que implementou o jogo. Não é possível inferir a cota exata, renovação, escopo por conta/rede/modelo ou disponibilidade futura. Nada pago foi ativado.
 
-A execução Actions 44542811277 deve ser avaliada separadamente; seu resultado não pode ser deduzido do teste local. Os eventos da primeira versão são gravados em arquivo e publicados ao término; o PR #5 permite acompanhamento ao vivo nas próximas execuções e rejeita resultados sem implementação.
+## Experimento CPU separado
 
-## Alternativa descartada após verificação
+OpenCode + Ollama 0.40.16 + Qwen3:4b, run 44545179961: download e inferência local funcionaram, porém a tarefa não produziu arquivos em 600s. Não foi validado como executor de desenvolvimento. Falha preservada em opencode/cpu-paddle-44545179961; configuração e ajustes no draft #7, sem merge. Preflight não obedeceu à resposta OK exata, e a etapa de teste rodou apenas o scaffold: não confundir isso com implementação aprovada. Guardas corrigidas no draft, ainda sem nova execução.
 
-GitHub Models foi integralmente encerrado em 30/07/2026, incluindo API de inferência. Guias antigos com models:read e GITHUB_TOKEN não são uma solução atual: https://docs.github.com/en/github-models
+## Infraestrutura e ajustes
 
-## O que falta para concluir
+Repositório público, Issues, branches, PRs, testes e Pages implantados. O primeiro bootstrap falhou antes da inferência porque ubuntu-latest selecionou Ubuntu 26.04 incompatível com Playwright 1.56.1; resolvido fixando Ubuntu 24.04. CI e publicação depois passaram.
 
-Comprovar uma inferência gratuita disponível, obter implementação na branch, revisar código e testes reais, validar jogabilidade em desktop e celular, registrar revisão no SHA exato e só então fazer merge e deploy manual do Pages. O CI inicial valida o scaffold, não o jogo.
+Este PR #5 adiciona eventos ao vivo e rejeita resultados sem novas alterações de implementação, sem módulos/testes e com erro JSON. Mantém um agente por vez, nenhum segredo do GitHub no processo do modelo, timeouts e ausência de fallback pago. A melhoria ainda deve ser exercitada em nova execução; não modifica o jogo.
 
-Fontes oficiais consultadas: https://opencode.ai/docs/console/models/ ; https://docs.github.com/en/billing/concepts/product-billing/github-actions ; https://docs.github.com/en/github-models
+## Pesquisa atual
+
+Big Pickle é oferta gratuita por tempo limitado; runners padrão em repositórios públicos são gratuitos. GitHub Models encerrou integralmente em 30/07/2026 e não pode ser usado como fallback apesar de tutoriais antigos. Pesos de modelos CPU não foram armazenados em artifacts/cache.
+
+Fontes oficiais: https://opencode.ai/docs/console/models/ ; https://docs.github.com/en/billing/concepts/product-billing/github-actions ; https://docs.github.com/en/github-models ; https://docs.ollama.com/integrations/opencode
