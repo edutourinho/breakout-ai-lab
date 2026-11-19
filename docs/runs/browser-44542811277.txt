@@ -1,0 +1,18 @@
+
+> breakout-ai-lab@0.1.0 test:e2e
+> playwright test
+
+
+Running 8 tests using 2 workers
+
+  ✓  1 [desktop] › e2e/scaffold.spec.js:2:1 › page loads without horizontal overflow or browser errors (194ms)
+  ✓  2 [desktop] › e2e/game.spec.js:46:1 › teclado inicia, move, lança, pausa, retoma e reinicia a partida (1.6s)
+  -  4 [desktop] › e2e/game.spec.js:104:1 › controles de toque movem a raquete em telas sensíveis
+  ✓  3 [mobile] › e2e/game.spec.js:46:1 › teclado inicia, move, lança, pausa, retoma e reinicia a partida (1.6s)
+  ✓  5 [desktop] › e2e/game.spec.js:125:1 › perda de foco pausa a partida e libera os controles (829ms)
+  ✓  7 [mobile] › e2e/scaffold.spec.js:2:1 › page loads without horizontal overflow or browser errors (183ms)
+  ✓  6 [mobile] › e2e/game.spec.js:104:1 › controles de toque movem a raquete em telas sensíveis (1.1s)
+  ✓  8 [mobile] › e2e/game.spec.js:125:1 › perda de foco pausa a partida e libera os controles (806ms)
+
+  1 skipped
+  7 passed (5.4s)
