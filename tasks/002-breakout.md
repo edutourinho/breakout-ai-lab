@@ -3,3 +3,5 @@ Use index.html, src/, tests/ and e2e/ only. Existing scaffold tests must keep pa
 Portuguese UI: initial screen with start button, arrows or A/D move paddle, Space launches ball or toggles pause, visible pause/resume/restart buttons, score, 3 lives, destructible colored bricks, ball/wall/paddle/brick collisions, win and game-over screens. Reset inputs on blur and pause on blur. Use fixed time steps or bounded delta with substeps to prevent tunneling. Keep physics functions independent of browser, export them for node:test. Responsive high-DPI canvas with touch controls, layout fitting 360px. No external assets or dependencies.
 Write meaningful deterministic tests for walls, paddle, bricks, score, life loss, victory, game over, pause and restart. Browser tests must exercise start, keyboard movement, pause/resume, restart and mobile controls without introducing test-only production shortcuts.
 Run npm test and npm run test:e2e; repair any failures. Do not edit infrastructure or Git files. Do not commit/push. Summarize implementation, test counts, limitations.
+
+Infrastructure retry: runner fixed to Ubuntu 24.04 for compatibility with pinned Playwright.
