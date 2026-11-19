@@ -36,7 +36,7 @@ jobs:
           /tmp/opencode-cli/node_modules/.bin/opencode --version | tee /tmp/opencode-version.txt
           /tmp/opencode-cli/node_modules/.bin/opencode models opencode | tee /tmp/opencode-models.txt
           grep -Fx 'opencode/big-pickle' /tmp/opencode-models.txt
-          timeout 1100 /tmp/opencode-cli/node_modules/.bin/opencode run --pure --auto --format json --model opencode/big-pickle --title 'Breakout issue 2 free pilot' "$(cat tasks/002-breakout.md)" > /tmp/opencode-events.jsonl 2>&1
+          timeout 1100 /tmp/opencode-cli/node_modules/.bin/opencode run --pure --auto --format json --model opencode/big-pickle --title 'Breakout issue 2 free pilot' "$(cat tasks/002-breakout.md)" 2>&1 | tee /tmp/opencode-events.jsonl
       - name: Validate changed paths
         run: |
           python3 - <<'PY'
@@ -45,13 +45,34 @@ jobs:
           bad = [p for p in paths if p and not (p == 'index.html' or p.startswith(('src/','tests/','e2e/')))]
           if bad: raise SystemExit('Agent modified prohibited paths: ' + repr(bad))
           PY
+      - name: Require generated implementation
+        id: implementation
+        continue-on-error: true
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, subprocess
+          changes = subprocess.check_output(['git','ls-files','-m','-o','--exclude-standard','-z']).decode().split('\0')
+          if not any(p == 'index.html' or p.startswith(('src/','tests/','e2e/')) for p in changes if p): raise SystemExit('Agent produced no implementation changes')
+          if not list(Path("src").rglob("*.js")): raise SystemExit("No game JavaScript was generated")
+          if not [p for p in Path("tests").glob("*.test.js") if p.name != "scaffold.test.js"]: raise SystemExit("No game unit tests were generated")
+          if not [p for p in Path("e2e").glob("*.spec.js") if p.name != "scaffold.spec.js"]: raise SystemExit("No gameplay browser tests were generated")
+          for line in Path("/tmp/opencode-events.jsonl").read_text().splitlines():
+              try: event = json.loads(line)
+              except ValueError: continue
+              if event.get("type") == "error": raise SystemExit("OpenCode emitted an error event")
+          PY
       - name: Test generated code
         id: tests
         continue-on-error: true
         run: |
           set -o pipefail
+          set +e
           npm test 2>&1 | tee /tmp/unit-tests.txt
+          UNIT_STATUS=${PIPESTATUS[0]}
           npm run test:e2e 2>&1 | tee /tmp/browser-tests.txt
+          BROWSER_STATUS=${PIPESTATUS[0]}
+          exit $((UNIT_STATUS != 0 || BROWSER_STATUS != 0))
       - name: Publish evidence branch only
         env:
           GH_TOKEN: ${{ github.token }}
@@ -74,5 +95,5 @@ jobs:
           git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $AUTH" push origin HEAD
           cat docs/runs/result-${{ github.run_id }}.txt >> "$GITHUB_STEP_SUMMARY"
       - name: Fail if generation or tests failed
-        if: steps.agent.outcome != 'success' || steps.tests.outcome != 'success'
+        if: steps.agent.outcome != 'success' || steps.implementation.outcome != 'success' || steps.tests.outcome != 'success'
         run: exit 1
