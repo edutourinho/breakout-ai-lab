@@ -1,0 +1,91 @@
+name: OpenCode CPU pilot
+on:
+  workflow_dispatch:
+  push:
+    branches: [lab/cpu-pilot]
+    paths: [tasks/006-paddle.md]
+permissions:
+  contents: write
+concurrency:
+  group: opencode-pilot
+  cancel-in-progress: false
+jobs:
+  implement:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      OLLAMA_HOST: '127.0.0.1:11434'
+      OLLAMA_CONTEXT_LENGTH: '65536'
+      OLLAMA_NUM_PARALLEL: '1'
+      OLLAMA_NO_CLOUD: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned tools and local weights
+        run: |
+          npm ci --ignore-scripts
+          npm install --prefix /tmp/opencode-cli opencode-ai@1.19.6
+          curl -fsSL https://github.com/ollama/ollama/releases/download/v0.40.16/ollama-linux-amd64.tar.zst -o /tmp/ollama.tar.zst
+          echo '87bfafb2acbc89b2e6a1be0a9043de6aa75fb450696f86bc426e65fc448f788d  /tmp/ollama.tar.zst' | sha256sum -c
+          mkdir /tmp/ollama
+          tar --zstd -xf /tmp/ollama.tar.zst -C /tmp/ollama
+          /tmp/ollama/bin/ollama serve > /tmp/ollama-server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:11434/api/version && break; sleep 1; done
+          /tmp/ollama/bin/ollama pull qwen3:4b
+          /tmp/ollama/bin/ollama list | tee /tmp/local-models.txt
+          curl -fsS http://127.0.0.1:11434/api/version | tee /tmp/local-version.json
+          cp opencode.json /tmp/original-opencode.json
+          cp config/opencode-ollama.json opencode.json
+      - name: Verify local inference
+        id: preflight
+        continue-on-error: true
+        run: |
+          curl -fsS --max-time 180 http://127.0.0.1:11434/api/chat -H 'Content-Type: application/json' -d '{"model":"qwen3:4b","stream":false,"think":false,"messages":[{"role":"user","content":"Reply OK only."}],"options":{"num_predict":16,"num_ctx":65536}}' | tee /tmp/local-preflight.json
+          python3 -c 'import json; x=json.load(open("/tmp/local-preflight.json")); assert x.get("message",{}).get("content","").strip() == "OK", x'
+      - name: Implement tiny task with OpenCode
+        id: agent
+        if: steps.preflight.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          timeout 600 /tmp/opencode-cli/node_modules/.bin/opencode run --pure --auto --print-logs --model ollama/qwen3:4b --format json --title 'CPU paddle pilot' "$(cat tasks/006-paddle.md)" </dev/null 2>&1 | tee /tmp/local-events.jsonl
+      - name: Restore config and check paths
+        run: |
+          cp /tmp/original-opencode.json opencode.json
+          python3 - <<'PY'
+          import subprocess
+          paths = subprocess.check_output(['git','ls-files','-m','-o','--exclude-standard','-z']).decode().split('\0')
+          bad = [p for p in paths if p and p not in ('src/paddle.js','tests/paddle.test.js')]
+          if bad: raise SystemExit('Prohibited changes: '+repr(bad))
+          PY
+      - name: Validate generated module and tests
+        id: tests
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          test -f src/paddle.js
+          test -f tests/paddle.test.js
+          npm test 2>&1 | tee /tmp/local-tests.txt
+      - name: Publish evidence branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p docs/runs
+          for f in /tmp/local-models.txt /tmp/local-version.json /tmp/local-preflight.json /tmp/local-events.jsonl /tmp/local-tests.txt; do
+            if [ -f "$f" ]; then cp "$f" "docs/runs/$(basename "$f" .jsonl)-${{ github.run_id }}"; fi
+          done
+          printf 'Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\nExecutor: OpenCode 1.19.6 + local Ollama 0.40.16 Qwen3:4b\nPreflight: ${{ steps.preflight.outcome }}\nAgent: ${{ steps.agent.outcome }}\nTests: ${{ steps.tests.outcome }}\nNo paid inference API. No merge.\n' > docs/runs/result-${{ github.run_id }}.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c opencode/cpu-paddle-${{ github.run_id }}
+          git add src tests docs/runs
+          git commit -m 'feat: CPU OpenCode paddle pilot with execution evidence'
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $AUTH" push origin HEAD
+          cat docs/runs/result-${{ github.run_id }}.txt >> "$GITHUB_STEP_SUMMARY"
+      - if: steps.preflight.outcome != 'success' || steps.agent.outcome != 'success' || steps.tests.outcome != 'success'
+        run: exit 1
