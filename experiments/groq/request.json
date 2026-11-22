@@ -1,0 +1,6 @@
+{
+  "experiment": "groq-free-2026-11-22-final",
+  "groq_model": "qwen/qwen3.8-27b",
+  "providers": ["opencode", "groq"],
+  "free_plan_confirmed": true
+}
