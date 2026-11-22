@@ -9,7 +9,7 @@
       "whitelist": ["openai/gpt-oss-120b"],
       "options": { "apiKey": "{env:GROQ_API_KEY}", "timeout": 60000, "maxRetries": 0 },
       "models": {
-        "openai/gpt-oss-120b": { "limit": { "context": 7000, "output": 1000 }, "options": { "reasoningEffort": "low", "parallelToolCalls": false } }
+        "openai/gpt-oss-120b": { "limit": { "context": 8000, "output": 3000 }, "options": { "reasoningEffort": "low", "parallelToolCalls": false } }
       }
     }
   },

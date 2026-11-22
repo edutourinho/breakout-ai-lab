@@ -38,7 +38,7 @@ def verify_groq(key):
 
 
 def summarize_events(raw, key=""):
-    result = {"steps": 0, "input_tokens": 0, "output_tokens": 0, "catalog_cost_estimate_usd": 0, "error_events": 0}
+    result = {"steps": 0, "input_tokens": 0, "output_tokens": 0, "reasoning_tokens": 0, "finish_reasons": [], "catalog_cost_estimate_usd": 0, "error_events": 0}
     tool_events = []
     summaries = []
     def redact(value):
@@ -69,6 +69,8 @@ def summarize_events(raw, key=""):
             result["steps"] += 1
             result["input_tokens"] += tokens.get("input", 0)
             result["output_tokens"] += tokens.get("output", 0)
+            result["reasoning_tokens"] += tokens.get("reasoning", 0)
+            result["finish_reasons"].append(part.get("reason"))
             result["catalog_cost_estimate_usd"] += part.get("cost", 0)
     result["tool_events"] = tool_events
     result["assistant_summary"] = summaries[-1][-800:] if summaries else ""
@@ -80,7 +82,7 @@ def config_for(provider):
     if provider == "opencode":
         config["model"] = config["small_model"] = MODEL[provider]
         config["enabled_providers"] = ["opencode"]
-        config["provider"] = {"opencode": {"whitelist": ["big-pickle"], "models": {"big-pickle": {"limit": {"context": 7000, "output": 1000}}}}}
+        config["provider"] = {"opencode": {"whitelist": ["big-pickle"], "models": {"big-pickle": {"limit": {"context": 8000, "output": 3000}}}}}
     return config
 
 
@@ -139,7 +141,7 @@ def run_provider(provider, request, cli, output):
             child_env["GROQ_API_KEY"] = key
         task = (ROOT / "experiments/groq/task.md").read_text()
         record["task_sha256"] = hashlib.sha256(task.encode()).hexdigest()
-        record["protocol"] = "compact-write-only-v2"
+        record["protocol"] = "compact-write-only-v3-output3000"
         task += f"\nExact absolute write paths: {work / 'src/paddle.js'} and {work / 'tests/paddle.test.js'}. Use the write tool for each; do not read other files."
         start = time.monotonic()
         command = [cli, "run", "--pure", "--auto", "--agent", "benchmark", "--model", MODEL[provider], "--format", "json", "--title", "Provider paddle benchmark", task]
