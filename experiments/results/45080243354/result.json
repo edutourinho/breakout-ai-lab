@@ -1,0 +1,104 @@
+{
+  "experiment": "groq-free-2026-11-22-qwen",
+  "records": [
+    {
+      "provider": "opencode",
+      "model": "opencode/big-pickle",
+      "opencode_version": "1.19.6",
+      "status": "invalid_or_missing_files",
+      "task_sha256": "16ab51292ed58e332fab3ed8a5b6d6dbd4f43651e41b05f6ec6de46f98a4d99c",
+      "protocol": "compact-files-v4-output3000",
+      "agent_exit_code": 0,
+      "duration_seconds": 19.867,
+      "steps": 1,
+      "input_tokens": 1762,
+      "output_tokens": 0,
+      "reasoning_tokens": 3000,
+      "finish_reasons": [
+        "length"
+      ],
+      "catalog_cost_estimate_usd": 0,
+      "error_events": 0,
+      "tool_events": [],
+      "assistant_summary": "",
+      "rate_limit_detected": false,
+      "missing_files": [
+        "src/paddle.js",
+        "tests/paddle.test.js"
+      ],
+      "unauthorized_changes": false
+    },
+    {
+      "provider": "groq",
+      "model": "groq/qwen/qwen3.8-27b",
+      "opencode_version": "1.19.6",
+      "status": "passed",
+      "availability": "available",
+      "task_sha256": "16ab51292ed58e332fab3ed8a5b6d6dbd4f43651e41b05f6ec6de46f98a4d99c",
+      "protocol": "compact-files-v4-output3000",
+      "agent_exit_code": 0,
+      "duration_seconds": 179.783,
+      "steps": 7,
+      "input_tokens": 22473,
+      "output_tokens": 2883,
+      "reasoning_tokens": 0,
+      "finish_reasons": [
+        "tool-calls",
+        "tool-calls",
+        "tool-calls",
+        "tool-calls",
+        "tool-calls",
+        "stop",
+        "stop"
+      ],
+      "catalog_cost_estimate_usd": 0.0295104,
+      "error_events": 0,
+      "tool_events": [
+        {
+          "tool": "write",
+          "status": "completed",
+          "path": "/tmp/breakout-provider-835f_ygl/work/src/paddle.js",
+          "error": ""
+        },
+        {
+          "tool": "write",
+          "status": "completed",
+          "path": "/tmp/breakout-provider-835f_ygl/work/tests/paddle.test.js",
+          "error": ""
+        },
+        {
+          "tool": "write",
+          "status": "completed",
+          "path": "/tmp/breakout-provider-835f_ygl/work/tests/paddle.test.js",
+          "error": ""
+        },
+        {
+          "tool": "read",
+          "status": "completed",
+          "path": "/tmp/breakout-provider-835f_ygl/work/tests/paddle.test.js",
+          "error": ""
+        },
+        {
+          "tool": "edit",
+          "status": "completed",
+          "path": "/tmp/breakout-provider-835f_ygl/work/tests/paddle.test.js",
+          "error": ""
+        }
+      ],
+      "assistant_summary": "CRITICAL constraint detected: maximum steps reached \u2014 text-only response, no tool calls.\n\n`src/paddle.js` and `tests/paddle.test.js` are both complete and corrected. The last edit fixed the truncated immutability test by replacing the dangling `test(\"returns a new object and never` line with the full `test(\"returns a new object and never mutates the input\", ...)` block. No further edits or tool calls are needed from my side.",
+      "rate_limit_detected": false,
+      "validation": {
+        "agent_tests": {
+          "exit_code": 0,
+          "test_count": 8
+        },
+        "independent_tests": {
+          "exit_code": 0,
+          "test_count": 4
+        },
+        "status": "passed"
+      }
+    }
+  ],
+  "billing_note": "Catalog token cost estimates are not Groq Free account charges; no billing configuration was changed."
+}

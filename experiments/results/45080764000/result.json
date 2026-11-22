@@ -1,0 +1,114 @@
+{
+  "experiment": "groq-free-2026-11-22-final",
+  "records": [
+    {
+      "provider": "opencode",
+      "model": "opencode/big-pickle",
+      "opencode_version": "1.19.6",
+      "status": "passed",
+      "task_sha256": "16ab51292ed58e332fab3ed8a5b6d6dbd4f43651e41b05f6ec6de46f98a4d99c",
+      "protocol": "provider-tuned-v5",
+      "budget": "provider_default",
+      "agent_exit_code": 0,
+      "duration_seconds": 22.852,
+      "steps": 2,
+      "input_tokens": 5859,
+      "output_tokens": 1042,
+      "reasoning_tokens": 2886,
+      "finish_reasons": [
+        "tool-calls",
+        "stop"
+      ],
+      "catalog_cost_estimate_usd": 0,
+      "error_events": 0,
+      "tool_events": [
+        {
+          "tool": "write",
+          "status": "completed",
+          "path": "/tmp/breakout-provider-6bk9u5co/work/src/paddle.js",
+          "error": ""
+        },
+        {
+          "tool": "write",
+          "status": "completed",
+          "path": "/tmp/breakout-provider-6bk9u5co/work/tests/paddle.test.js",
+          "error": ""
+        }
+      ],
+      "assistant_summary": "Created `src/paddle.js` and `tests/paddle.test.js`.",
+      "rate_limit_detected": true,
+      "validation": {
+        "agent_tests": {
+          "exit_code": 0,
+          "test_count": 7
+        },
+        "independent_tests": {
+          "exit_code": 0,
+          "test_count": 4
+        },
+        "status": "passed"
+      }
+    },
+    {
+      "provider": "groq",
+      "model": "groq/qwen/qwen3.8-27b",
+      "opencode_version": "1.19.6",
+      "status": "passed",
+      "availability": "available",
+      "task_sha256": "16ab51292ed58e332fab3ed8a5b6d6dbd4f43651e41b05f6ec6de46f98a4d99c",
+      "protocol": "provider-tuned-v5",
+      "budget": {
+        "context": 8000,
+        "output": 3000
+      },
+      "agent_exit_code": 0,
+      "duration_seconds": 23.001,
+      "steps": 4,
+      "input_tokens": 9148,
+      "output_tokens": 1187,
+      "reasoning_tokens": 0,
+      "finish_reasons": [
+        "tool-calls",
+        "tool-calls",
+        "tool-calls",
+        "stop"
+      ],
+      "catalog_cost_estimate_usd": 0.012066400000000001,
+      "error_events": 0,
+      "tool_events": [
+        {
+          "tool": "read",
+          "status": "completed",
+          "path": "/tmp/breakout-provider-ngocsp94/work/AGENTS.md",
+          "error": ""
+        },
+        {
+          "tool": "write",
+          "status": "completed",
+          "path": "/tmp/breakout-provider-ngocsp94/work/src/paddle.js",
+          "error": ""
+        },
+        {
+          "tool": "write",
+          "status": "completed",
+          "path": "/tmp/breakout-provider-ngocsp94/work/tests/paddle.test.js",
+          "error": ""
+        }
+      ],
+      "assistant_summary": "Done. Created both files:\n\n- `/tmp/breakout-provider-ngocsp94/work/src/paddle.js` \u2014 named export `movePaddle(paddle, direction, dt, worldWidth)`. Returns a new object via spread (preserves all properties except `x`). Computes `x + direction * speed * dt` and clamps with `Math.min(Math.max(nextX, 0), worldWidth - paddle.width)`. No mutation of input.\n\n- `/tmp/breakout-provider-ngocsp94/work/tests/paddle.test.js` \u2014 `node:test` + `node:assert/strict` only, importing `../src/paddle.js`. Covers move right, move left, zero direction, zero dt, both edge clamps, exact-limit cases, immutability (input `x` unchanged, new object identity), and extra-property preservation.\n\nNo other files touched, no shell/network/config edits.",
+      "rate_limit_detected": false,
+      "validation": {
+        "agent_tests": {
+          "exit_code": 0,
+          "test_count": 10
+        },
+        "independent_tests": {
+          "exit_code": 0,
+          "test_count": 4
+        },
+        "status": "passed"
+      }
+    }
+  ],
+  "billing_note": "Catalog token cost estimates are not Groq Free account charges; no billing configuration was changed."
+}

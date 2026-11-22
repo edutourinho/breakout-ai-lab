@@ -14,7 +14,7 @@ import urllib.error
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
-MODEL = {"groq": "groq/openai/gpt-oss-120b", "opencode": "opencode/big-pickle"}
+MODEL = {"groq": "groq/qwen/qwen3.8-27b", "opencode": "opencode/big-pickle"}
 ALLOWED = {"src/paddle.js", "tests/paddle.test.js"}
 GROQ_FREE_MODELS = {"openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"}
 
@@ -24,7 +24,7 @@ def environment():
     return {key: os.environ[key] for key in keys if key in os.environ}
 
 
-def verify_groq(key, model_id="openai/gpt-oss-120b"):
+def verify_groq(key, model_id="qwen/qwen3.8-27b"):
     """Check exact model availability; errors are codes only, never HTTP bodies."""
     request = urllib.request.Request("https://api.groq.com/openai/v1/models", headers={"Authorization": "Bearer " + key, "User-Agent": "breakout-ai-lab-provider-check/1.0"})
     try:
@@ -78,7 +78,13 @@ def summarize_events(raw, key=""):
     return result
 
 
-def config_for(provider, groq_model="openai/gpt-oss-120b"):
+def rate_limit_detected(record):
+    # Inspect error messages only: numeric timestamps/IDs can contain "429".
+    errors = json.dumps(record.get("errors", [])).lower()
+    return bool(re.search(r"rate[_ ]limit|usage limit|(?:status|http)[^a-z0-9]{0,12}429\b", errors))
+
+
+def config_for(provider, groq_model="qwen/qwen3.8-27b"):
     config = json.loads((ROOT / "config/opencode-groq-free.json").read_text())
     if groq_model not in GROQ_FREE_MODELS:
         raise ValueError("Model not in verified Groq Free allowlist")
@@ -118,7 +124,7 @@ def evaluate(work, node):
 
 
 def run_provider(provider, request, cli, output):
-    groq_model = request.get("groq_model", "openai/gpt-oss-120b")
+    groq_model = request.get("groq_model", "qwen/qwen3.8-27b")
     config = config_for(provider, groq_model)
     record = {"provider": provider, "model": config["model"], "opencode_version": "1.19.6", "status": "pending"}
     key = os.environ.get("GROQ_API_KEY", "")
@@ -166,7 +172,7 @@ def run_provider(provider, request, cli, output):
         raw = captured.decode(errors="replace")
         record["duration_seconds"] = round(time.monotonic() - start, 3)
         record.update(summarize_events(raw, key))
-        record["rate_limit_detected"] = "429" in raw or "rate_limit" in raw.lower() or "rate limit" in raw.lower() or "usage limit" in raw.lower()
+        record["rate_limit_detected"] = rate_limit_detected(record)
         # Raw output is never printed or persisted. Catalog estimates are not billing.
         del raw
         actual = {str(p.relative_to(work)) for p in work.rglob("*") if p.is_file() or p.is_symlink()}

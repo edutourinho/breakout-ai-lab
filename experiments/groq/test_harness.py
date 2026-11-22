@@ -50,6 +50,11 @@ class HarnessTests(unittest.TestCase):
             self.assertNotIn("bash", config["tools"])
             self.assertEqual(config["permission"]["external_directory"], "deny")
 
+    def test_rate_limit_detection_ignores_numeric_ids(self):
+        self.assertFalse(benchmark.rate_limit_detected({"assistant_summary": "event 429000", "errors": []}))
+        self.assertTrue(benchmark.rate_limit_detected({"errors": ["HTTP 429"]}))
+        self.assertTrue(benchmark.rate_limit_detected({"errors": ["rate_limit_exceeded"]}))
+
     def test_models_outside_free_allowlist_are_rejected(self):
         with self.assertRaises(ValueError):
             benchmark.config_for("groq", "not-approved/paid-model")
