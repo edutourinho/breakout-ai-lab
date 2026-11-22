@@ -1,15 +1,15 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "groq/openai/gpt-oss-120b",
-  "small_model": "groq/openai/gpt-oss-120b",
+  "model": "groq/qwen/qwen3.8-27b",
+  "small_model": "groq/qwen/qwen3.8-27b",
   "enabled_providers": ["groq"],
   "share": "disabled",
   "provider": {
     "groq": {
-      "whitelist": ["openai/gpt-oss-120b"],
+      "whitelist": ["qwen/qwen3.8-27b"],
       "options": { "apiKey": "{env:GROQ_API_KEY}", "timeout": 60000, "maxRetries": 0 },
       "models": {
-        "openai/gpt-oss-120b": { "limit": { "context": 8000, "output": 3000 }, "options": { "reasoningEffort": "low", "parallelToolCalls": false } }
+        "qwen/qwen3.8-27b": { "name": "Qwen 3.8 27B (Groq Free preview)", "tool_call": true, "limit": { "context": 8000, "output": 3000 }, "options": { "reasoningEffort": "none", "parallelToolCalls": false } }
       }
     }
   },

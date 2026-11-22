@@ -85,7 +85,7 @@ def config_for(provider, groq_model="openai/gpt-oss-120b"):
     if provider == "opencode":
         config["model"] = config["small_model"] = MODEL[provider]
         config["enabled_providers"] = ["opencode"]
-        config["provider"] = {"opencode": {"whitelist": ["big-pickle"], "models": {"big-pickle": {"limit": {"context": 8000, "output": 3000}}}}}
+        config["provider"] = {"opencode": {"whitelist": ["big-pickle"]}}
     else:
         config["model"] = config["small_model"] = "groq/" + groq_model
         config["provider"]["groq"]["whitelist"] = [groq_model]
@@ -150,7 +150,8 @@ def run_provider(provider, request, cli, output):
             child_env["GROQ_API_KEY"] = key
         task = (ROOT / "experiments/groq/task.md").read_text()
         record["task_sha256"] = hashlib.sha256(task.encode()).hexdigest()
-        record["protocol"] = "compact-files-v4-output3000"
+        record["protocol"] = "provider-tuned-v5"
+        record["budget"] = "provider_default" if provider == "opencode" else {"context": 8000, "output": 3000}
         task += f"\nExact absolute write paths: {work / 'src/paddle.js'} and {work / 'tests/paddle.test.js'}. Read AGENTS.md if needed; use the write tool for each output file."
         start = time.monotonic()
         command = [cli, "run", "--pure", "--auto", "--agent", "benchmark", "--model", config["model"], "--format", "json", "--title", "Provider paddle benchmark", task]
