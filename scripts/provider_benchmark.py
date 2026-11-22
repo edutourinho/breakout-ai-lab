@@ -24,7 +24,7 @@ def environment():
 
 def verify_groq(key):
     """Check exact model availability; errors are codes only, never HTTP bodies."""
-    request = urllib.request.Request("https://api.groq.com/openai/v1/models", headers={"Authorization": "Bearer " + key})
+    request = urllib.request.Request("https://api.groq.com/openai/v1/models", headers={"Authorization": "Bearer " + key, "User-Agent": "breakout-ai-lab-provider-check/1.0"})
     try:
         with urllib.request.urlopen(request, timeout=20) as response:
             data = json.load(response)
@@ -111,7 +111,9 @@ def run_provider(provider, request, cli, output):
             return {**record, "status": "blocked_missing_secret"}
         availability = verify_groq(key)
         record["availability"] = availability
-        if availability != "available":
+        # A catalog-read denial does not establish that chat inference is denied.
+        # Try the official native Groq client once; invalid credentials/absent ID stop.
+        if availability in ("http_401", "model_unavailable"):
             return {**record, "status": "blocked_preflight"}
     with tempfile.TemporaryDirectory(prefix="breakout-provider-") as temporary:
         parent = Path(temporary)
@@ -188,7 +190,7 @@ def main():
         lines.append(f"| {record['provider']} | {record['status']} | {record.get('duration_seconds', '-')} | {record.get('steps', '-')} | {record.get('input_tokens', '-')} / {record.get('output_tokens', '-')} |")
     lines.extend(["", "Each generated module is checked by agent tests and independent acceptance tests. A passing scaffold does not count.", "Catalog token estimates do not identify actual Free-tier billing. No inference comparison is possible for a blocked provider.", "Historical V1 generation (25 steps / 1059.994s) was a different task, not a speed baseline.", ""])
     (output / "RESULT.md").write_text("\n".join(lines))
-    return 0 if len(records) == 2 and all(record["status"] == "passed" for record in records) else 1
+    return 0 if records and all(record["status"] == "passed" for record in records) else 1
 
 
 if __name__ == "__main__":

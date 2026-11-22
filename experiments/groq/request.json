@@ -1,5 +1,5 @@
 {
   "experiment": "groq-free-2026-11-22",
-  "providers": ["opencode", "groq"],
+  "providers": ["groq"],
   "free_plan_confirmed": true
 }
