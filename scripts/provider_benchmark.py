@@ -36,8 +36,15 @@ def verify_groq(key):
         return "connection_error"
 
 
-def summarize_events(raw):
+def summarize_events(raw, key=""):
     result = {"steps": 0, "input_tokens": 0, "output_tokens": 0, "catalog_cost_estimate_usd": 0, "error_events": 0}
+    tool_events = []
+    summaries = []
+    def redact(value):
+        text = str(value)
+        if key:
+            text = text.replace(key, "[REDACTED]")
+        return re.sub(r"gsk_[A-Za-z0-9_-]{10,}", "[REDACTED]", text)
     for line in raw.splitlines():
         try:
             event = json.loads(line)
@@ -45,6 +52,12 @@ def summarize_events(raw):
             continue
         if event.get("type") == "error":
             result["error_events"] += 1
+        if event.get("type") == "tool_use":
+            part = event.get("part", {})
+            state = part.get("state", {})
+            tool_events.append({"tool": redact(part.get("tool", "unknown")), "status": state.get("status"), "error": redact(state.get("error", ""))[:300]})
+        if event.get("type") == "text":
+            summaries.append(redact(event.get("part", {}).get("text", "")))
         if event.get("type") == "step_finish":
             part = event.get("part", {})
             tokens = part.get("tokens", {})
@@ -52,6 +65,8 @@ def summarize_events(raw):
             result["input_tokens"] += tokens.get("input", 0)
             result["output_tokens"] += tokens.get("output", 0)
             result["catalog_cost_estimate_usd"] += part.get("cost", 0)
+    result["tool_events"] = tool_events
+    result["assistant_summary"] = summaries[-1][-800:] if summaries else ""
     return result
 
 
@@ -125,12 +140,13 @@ def run_provider(provider, request, cli, output):
             raw = (error.stdout or b"").decode(errors="replace")
             record["agent_exit_code"] = 124
         record["duration_seconds"] = round(time.monotonic() - start, 3)
-        record.update(summarize_events(raw))
+        record.update(summarize_events(raw, key))
         record["rate_limit_detected"] = "429" in raw or "rate_limit" in raw.lower() or "usage limit" in raw.lower()
         # Raw output is never printed or persisted. Catalog estimates are not billing.
         del raw
         actual = {str(p.relative_to(work)) for p in work.rglob("*") if p.is_file() or p.is_symlink()}
         invalid = [name for name in actual if name not in ALLOWED and (name not in original or (work / name).is_symlink() or (work / name).read_bytes() != original[name])]
+        invalid.extend(name for name in original if not (work / name).is_file())
         missing = [name for name in ALLOWED if not (work / name).is_file() or (work / name).is_symlink()]
         if invalid or missing:
             return {**record, "status": "invalid_or_missing_files", "missing_files": sorted(missing), "unauthorized_changes": bool(invalid)}
