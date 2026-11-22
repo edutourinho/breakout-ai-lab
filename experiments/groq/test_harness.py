@@ -50,6 +50,10 @@ class HarnessTests(unittest.TestCase):
             self.assertNotIn("bash", config["tools"])
             self.assertEqual(config["permission"]["external_directory"], "deny")
 
+    def test_models_outside_free_allowlist_are_rejected(self):
+        with self.assertRaises(ValueError):
+            benchmark.config_for("groq", "not-approved/paid-model")
+
 
 if __name__ == "__main__":
     unittest.main()

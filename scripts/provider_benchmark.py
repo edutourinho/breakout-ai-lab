@@ -16,6 +16,7 @@ import urllib.request
 ROOT = Path(__file__).resolve().parents[1]
 MODEL = {"groq": "groq/openai/gpt-oss-120b", "opencode": "opencode/big-pickle"}
 ALLOWED = {"src/paddle.js", "tests/paddle.test.js"}
+GROQ_FREE_MODELS = {"openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"}
 
 
 def environment():
@@ -23,14 +24,14 @@ def environment():
     return {key: os.environ[key] for key in keys if key in os.environ}
 
 
-def verify_groq(key):
+def verify_groq(key, model_id="openai/gpt-oss-120b"):
     """Check exact model availability; errors are codes only, never HTTP bodies."""
     request = urllib.request.Request("https://api.groq.com/openai/v1/models", headers={"Authorization": "Bearer " + key, "User-Agent": "breakout-ai-lab-provider-check/1.0"})
     try:
         with urllib.request.urlopen(request, timeout=20) as response:
             data = json.load(response)
             ids = {item.get("id") for item in data.get("data", [])}
-            return "available" if "openai/gpt-oss-120b" in ids else "model_unavailable"
+            return "available" if model_id in ids else "model_unavailable"
     except urllib.error.HTTPError as error:
         return "http_" + str(error.code)
     except (OSError, ValueError):
@@ -77,12 +78,18 @@ def summarize_events(raw, key=""):
     return result
 
 
-def config_for(provider):
+def config_for(provider, groq_model="openai/gpt-oss-120b"):
     config = json.loads((ROOT / "config/opencode-groq-free.json").read_text())
+    if groq_model not in GROQ_FREE_MODELS:
+        raise ValueError("Model not in verified Groq Free allowlist")
     if provider == "opencode":
         config["model"] = config["small_model"] = MODEL[provider]
         config["enabled_providers"] = ["opencode"]
         config["provider"] = {"opencode": {"whitelist": ["big-pickle"], "models": {"big-pickle": {"limit": {"context": 8000, "output": 3000}}}}}
+    else:
+        config["model"] = config["small_model"] = "groq/" + groq_model
+        config["provider"]["groq"]["whitelist"] = [groq_model]
+        config["provider"]["groq"]["models"] = {groq_model: {"name": groq_model, "tool_call": True, "limit": {"context": 8000, "output": 3000}, "options": {"reasoningEffort": "none" if groq_model.startswith("qwen/") else "low", "parallelToolCalls": False}}}
     return config
 
 
@@ -111,14 +118,16 @@ def evaluate(work, node):
 
 
 def run_provider(provider, request, cli, output):
-    record = {"provider": provider, "model": MODEL[provider], "opencode_version": "1.19.6", "status": "pending"}
+    groq_model = request.get("groq_model", "openai/gpt-oss-120b")
+    config = config_for(provider, groq_model)
+    record = {"provider": provider, "model": config["model"], "opencode_version": "1.19.6", "status": "pending"}
     key = os.environ.get("GROQ_API_KEY", "")
     if provider == "groq":
         if not request.get("free_plan_confirmed"):
             return {**record, "status": "blocked_free_plan_unconfirmed"}
         if not key:
             return {**record, "status": "blocked_missing_secret"}
-        availability = verify_groq(key)
+        availability = verify_groq(key, groq_model)
         record["availability"] = availability
         # A catalog-read denial does not establish that chat inference is denied.
         # Try the official native Groq client once; invalid credentials/absent ID stop.
@@ -132,7 +141,7 @@ def run_provider(provider, request, cli, output):
         (work / "src").mkdir()
         (work / "tests").mkdir()
         (work / "package.json").write_text('{"private":true,"type":"module"}\n')
-        (work / "opencode.json").write_text(json.dumps(config_for(provider)))
+        (work / "opencode.json").write_text(json.dumps(config))
         (work / "AGENTS.md").write_text("Only write src/paddle.js and tests/paddle.test.js. No shell, secrets, external paths or network. Coordinator runs tests.\n")
         original = {str(p.relative_to(work)): p.read_bytes() for p in work.rglob("*") if p.is_file()}
         child_env = environment()
@@ -141,10 +150,10 @@ def run_provider(provider, request, cli, output):
             child_env["GROQ_API_KEY"] = key
         task = (ROOT / "experiments/groq/task.md").read_text()
         record["task_sha256"] = hashlib.sha256(task.encode()).hexdigest()
-        record["protocol"] = "compact-write-only-v3-output3000"
-        task += f"\nExact absolute write paths: {work / 'src/paddle.js'} and {work / 'tests/paddle.test.js'}. Use the write tool for each; do not read other files."
+        record["protocol"] = "compact-files-v4-output3000"
+        task += f"\nExact absolute write paths: {work / 'src/paddle.js'} and {work / 'tests/paddle.test.js'}. Read AGENTS.md if needed; use the write tool for each output file."
         start = time.monotonic()
-        command = [cli, "run", "--pure", "--auto", "--agent", "benchmark", "--model", MODEL[provider], "--format", "json", "--title", "Provider paddle benchmark", task]
+        command = [cli, "run", "--pure", "--auto", "--agent", "benchmark", "--model", config["model"], "--format", "json", "--title", "Provider paddle benchmark", task]
         process = subprocess.Popen(command, cwd=work, env=child_env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
         try:
             captured, _ = process.communicate(timeout=300)
