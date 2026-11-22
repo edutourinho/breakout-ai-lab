@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+import signal
 import shutil
 import subprocess
 import tempfile
@@ -50,12 +51,16 @@ def summarize_events(raw, key=""):
             event = json.loads(line)
         except ValueError:
             continue
+        if not isinstance(event, dict):
+            continue
         if event.get("type") == "error":
             result["error_events"] += 1
+            result.setdefault("errors", []).append(redact(event.get("error", {}))[:1000])
         if event.get("type") == "tool_use":
             part = event.get("part", {})
             state = part.get("state", {})
-            tool_events.append({"tool": redact(part.get("tool", "unknown")), "status": state.get("status"), "error": redact(state.get("error", ""))[:300]})
+            tool_input = state.get("input", {})
+            tool_events.append({"tool": redact(part.get("tool", "unknown")), "status": state.get("status"), "path": redact(tool_input.get("filePath", ""))[:200], "error": redact(state.get("error", ""))[:300]})
         if event.get("type") == "text":
             summaries.append(redact(event.get("part", {}).get("text", "")))
         if event.get("type") == "step_finish":
@@ -93,7 +98,9 @@ def evaluate(work, node):
         command = ["sudo", "-u", "nobody", "env", "-i", "PATH=/usr/bin:/bin", node, "--test", testfile]
         try:
             process = subprocess.run(command, cwd=work, env=environment(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=15)
-            results[label] = {"exit_code": process.returncode}
+            text = process.stdout.decode(errors="replace")
+            count = re.search(r"^# tests (\d+)$", text, re.MULTILINE)
+            results[label] = {"exit_code": process.returncode, "test_count": int(count.group(1)) if count else None}
         except subprocess.TimeoutExpired:
             results[label] = {"exit_code": 124}
     results["status"] = "passed" if all(results[k]["exit_code"] == 0 for k in ("agent_tests", "independent_tests")) else "failed"
@@ -132,18 +139,22 @@ def run_provider(provider, request, cli, output):
             child_env["GROQ_API_KEY"] = key
         task = (ROOT / "experiments/groq/task.md").read_text()
         record["task_sha256"] = hashlib.sha256(task.encode()).hexdigest()
+        record["protocol"] = "compact-write-only-v2"
+        task += f"\nExact absolute write paths: {work / 'src/paddle.js'} and {work / 'tests/paddle.test.js'}. Use the write tool for each; do not read other files."
         start = time.monotonic()
         command = [cli, "run", "--pure", "--auto", "--agent", "benchmark", "--model", MODEL[provider], "--format", "json", "--title", "Provider paddle benchmark", task]
+        process = subprocess.Popen(command, cwd=work, env=child_env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
         try:
-            process = subprocess.run(command, cwd=work, env=child_env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=300)
-            raw = process.stdout.decode(errors="replace")
+            captured, _ = process.communicate(timeout=300)
             record["agent_exit_code"] = process.returncode
-        except subprocess.TimeoutExpired as error:
-            raw = (error.stdout or b"").decode(errors="replace")
+        except subprocess.TimeoutExpired:
+            os.killpg(process.pid, signal.SIGKILL)
+            captured, _ = process.communicate()
             record["agent_exit_code"] = 124
+        raw = captured.decode(errors="replace")
         record["duration_seconds"] = round(time.monotonic() - start, 3)
         record.update(summarize_events(raw, key))
-        record["rate_limit_detected"] = "429" in raw or "rate_limit" in raw.lower() or "usage limit" in raw.lower()
+        record["rate_limit_detected"] = "429" in raw or "rate_limit" in raw.lower() or "rate limit" in raw.lower() or "usage limit" in raw.lower()
         # Raw output is never printed or persisted. Catalog estimates are not billing.
         del raw
         actual = {str(p.relative_to(work)) for p in work.rglob("*") if p.is_file() or p.is_symlink()}

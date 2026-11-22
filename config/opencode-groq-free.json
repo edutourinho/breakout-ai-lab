@@ -9,7 +9,7 @@
       "whitelist": ["openai/gpt-oss-120b"],
       "options": { "apiKey": "{env:GROQ_API_KEY}", "timeout": 60000, "maxRetries": 0 },
       "models": {
-        "openai/gpt-oss-120b": { "limit": { "context": 7000, "output": 1000 } }
+        "openai/gpt-oss-120b": { "limit": { "context": 7000, "output": 1000 }, "options": { "reasoningEffort": "low", "parallelToolCalls": false } }
       }
     }
   },
@@ -19,10 +19,10 @@
       "description": "Small isolated provider comparison; no shell or network tools",
       "mode": "primary",
       "steps": 6,
-      "prompt": "Implement the exact task by reading and writing only the requested files. Use concise tool calls. Do not inspect credentials, configuration, processes, external paths or network resources. The coordinator runs tests after you finish. Do not delegate."
+      "prompt": "Create the two requested files with the write tool, using the exact absolute paths provided in the task. No other files or tools are needed. Do not inspect credentials, configuration, processes, external paths or network resources. The coordinator runs tests after you finish. Do not delegate."
     }
   },
-  "tools": { "*": false, "read": true, "write": true, "edit": true },
+  "tools": { "*": false, "write": true },
   "permission": {
     "*": "deny",
     "read": "allow",

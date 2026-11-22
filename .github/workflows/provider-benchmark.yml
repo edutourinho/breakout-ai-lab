@@ -23,6 +23,8 @@ jobs:
           node-version: '22'
       - name: Install unchanged OpenCode version
         run: npm install --prefix /tmp/provider-cli opencode-ai@1.19.6
+      - name: Validate credential gates and result redaction
+        run: python3 -m unittest discover -s experiments/groq -p test_harness.py -v
       - name: Run isolated provider experiment
         id: benchmark
         continue-on-error: true
