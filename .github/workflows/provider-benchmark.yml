@@ -1,0 +1,48 @@
+name: Provider benchmark (Groq Free)
+on:
+  workflow_dispatch:
+  push:
+    branches: [lab/groq-provider]
+    paths: [experiments/groq/request.json]
+permissions:
+  contents: read
+concurrency:
+  group: opencode-pilot
+  cancel-in-progress: false
+jobs:
+  experiment:
+    if: github.repository_owner == 'edutourinho'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install unchanged OpenCode version
+        run: npm install --prefix /tmp/provider-cli opencode-ai@1.19.6
+      - name: Run isolated provider experiment
+        id: benchmark
+        continue-on-error: true
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: python3 scripts/provider_benchmark.py --cli /tmp/provider-cli/node_modules/.bin/opencode --output experiments/results/${{ github.run_id }}
+      - name: Store public experiment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: provider-benchmark-${{ github.run_id }}
+          path: experiments/results/${{ github.run_id }}
+          if-no-files-found: warn
+          retention-days: 1
+      - name: Summarize and preserve failure status
+        if: always()
+        env:
+          BENCHMARK_OUTCOME: ${{ steps.benchmark.outcome }}
+        run: |
+          if [ -f experiments/results/${{ github.run_id }}/RESULT.md ]; then
+            cat experiments/results/${{ github.run_id }}/RESULT.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          test "$BENCHMARK_OUTCOME" = success
