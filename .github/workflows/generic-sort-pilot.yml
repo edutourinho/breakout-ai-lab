@@ -19,17 +19,28 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           python3 - <<'PY'
-          import json, os, time, urllib.request, urllib.error, pathlib
+          import json, os, time, subprocess, pathlib, re
           key = os.environ.get("GROQ_API_KEY")
           if not key: raise SystemExit("Missing GROQ_API_KEY")
           prompt = "Return only CommonJS JavaScript source, no markdown. Export {sortTasks}. Input array of objects with nonempty string id, priority high/medium/low, valid calendar date YYYY-MM-DD. Throw TypeError on invalid input. Return new array sorted high first then medium then low, then date ascending, stable input order on exact ties. Do not mutate input or items. No dependencies, I/O, network, dynamic code or tools. Pure generic exercise."
           payload = {"model":"openai/gpt-oss-120b","messages":[{"role":"user","content":prompt}],"max_completion_tokens":1800,"temperature":0.2,"stream":False}
-          req = urllib.request.Request("https://api.groq.com/openai/v1/chat/completions",data=json.dumps(payload).encode(),headers={"Authorization":"Bearer "+key,"Content-Type":"application/json"})
           start=time.monotonic()
-          try:
-              with urllib.request.urlopen(req,timeout=60) as response: result=json.load(response)
-          except urllib.error.HTTPError as e:
-              raise SystemExit("Provider HTTP "+str(e.code))
+          # curl is the documented API client; no credentials in logs or arguments.
+          config = 'header = "Authorization: Bearer '+key+'"\nheader = "Content-Type: application/json"\n'
+          pathlib.Path("payload.json").write_text(json.dumps(payload))
+          response=subprocess.run(["curl","--silent","--show-error","--max-time","60","--config","-","--data-binary","@payload.json","--output","response.json","--write-out","%{http_code}","https://api.groq.com/openai/v1/chat/completions"],input=config,text=True,capture_output=True)
+          if response.returncode: raise SystemExit("Transport error "+str(response.returncode))
+          raw=pathlib.Path("response.json").read_text()
+          if response.stdout!="200":
+              try:
+                  err=json.loads(raw).get("error",{})
+                  code=err.get("code") or err.get("type") or "unspecified"
+                  code=code if isinstance(code,str) and re.fullmatch(r"[a-zA-Z0-9_-]{1,80}",code) else "unspecified"
+                  print("Provider error code:",code)
+              except (ValueError,AttributeError):
+                  print("Non-JSON error; edge code 1010:", "1010" in raw)
+              raise SystemExit("Provider HTTP "+response.stdout)
+          result=json.loads(raw)
           choice=result["choices"][0]
           if choice["finish_reason"]!="stop": raise SystemExit("Incomplete generation")
           code=choice["message"]["content"].strip()
