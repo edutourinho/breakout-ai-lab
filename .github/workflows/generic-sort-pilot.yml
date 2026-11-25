@@ -1,0 +1,73 @@
+name: Generic sort pilot
+on:
+  push:
+    branches: [lab/generic-sort-pilot]
+    paths: ['.github/workflows/generic-sort-pilot.yml']
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: generic-sort-pilot
+  cancel-in-progress: false
+jobs:
+  generate:
+    if: github.repository == 'edutourinho/breakout-ai-lab' && github.ref == 'refs/heads/lab/generic-sort-pilot'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Generate candidate
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json, os, time, urllib.request, urllib.error, pathlib
+          key = os.environ.get("GROQ_API_KEY")
+          if not key: raise SystemExit("Missing GROQ_API_KEY")
+          prompt = "Return only CommonJS JavaScript source, no markdown. Export {sortTasks}. Input array of objects with nonempty string id, priority high/medium/low, valid calendar date YYYY-MM-DD. Throw TypeError on invalid input. Return new array sorted high first then medium then low, then date ascending, stable input order on exact ties. Do not mutate input or items. No dependencies, I/O, network, dynamic code or tools. Pure generic exercise."
+          payload = {"model":"openai/gpt-oss-120b","messages":[{"role":"user","content":prompt}],"max_completion_tokens":1800,"temperature":0.2,"stream":False}
+          req = urllib.request.Request("https://api.groq.com/openai/v1/chat/completions",data=json.dumps(payload).encode(),headers={"Authorization":"Bearer "+key,"Content-Type":"application/json"})
+          start=time.monotonic()
+          try:
+              with urllib.request.urlopen(req,timeout=60) as response: result=json.load(response)
+          except urllib.error.HTTPError as e:
+              raise SystemExit("Provider HTTP "+str(e.code))
+          choice=result["choices"][0]
+          if choice["finish_reason"]!="stop": raise SystemExit("Incomplete generation")
+          code=choice["message"]["content"].strip()
+          if not code or len(code)>16000 or code.startswith(chr(96)*3): raise SystemExit("Unexpected output format")
+          pathlib.Path("output").mkdir()
+          pathlib.Path("output/sort.cjs").write_text(code+"\n")
+          usage=result.get("usage",{})
+          metrics={"model":result.get("model"),"seconds":round(time.monotonic()-start,2),"usage":{k:usage.get(k) for k in ("prompt_tokens","completion_tokens","total_tokens")}}
+          pathlib.Path("output/metrics.json").write_text(json.dumps(metrics,indent=2))
+          print(json.dumps(metrics))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: generic-sort-candidate
+          path: output/
+          retention-days: 3
+  verify:
+    needs: generate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: generic-sort-candidate
+          path: candidate
+      - name: Independent isolated tests
+        run: |
+          mkdir checks
+          cat > checks/check.cjs <<'JS'
+          const {test}=require('node:test');
+          const assert=require('node:assert/strict');
+          const {sortTasks}=require('/candidate/sort.cjs');
+          const t=(id,priority,date)=>Object.freeze({id,priority,date});
+          const ids=xs=>xs.map(x=>x.id);
+          test('priority and date',()=>assert.deepEqual(ids(sortTasks([t('a','low','2020-01-01'),t('b','high','2026-02-01'),t('c','medium','2020-01-01'),t('d','high','2026-01-01')])),['d','b','c','a']));
+          test('stable ties and immutable input',()=>{const a=Object.freeze([t('z','low','2025-01-01'),t('b','low','2025-01-01')]);const r=sortTasks(a);assert.notEqual(r,a);assert.deepEqual(ids(r),['z','b']);assert.deepEqual(ids(a),['z','b']);});
+          test('empty',()=>assert.deepEqual(sortTasks([]),[]));
+          test('invalid',()=>{for(const a of [null,{},[null],[t('a','urgent','2026-01-01')],[t('a','high','2026-02-29')],[t('a','high','2024-02-30')],[t('','low','2024-02-29')],[t('a','low','2024-2-01')]])assert.throws(()=>sortTasks(a),TypeError);});
+          test('leap date',()=>assert.deepEqual(ids(sortTasks([t('a','low','2024-02-29')])),['a']));
+          JS
+          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --pids-limit 32 --memory 256m --cpus 1 --user 1000:1000 -v "$PWD/candidate:/candidate:ro" -v "$PWD/checks:/checks:ro" node:22-bookworm-slim node --test /checks/check.cjs
